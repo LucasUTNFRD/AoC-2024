@@ -1,0 +1,14 @@
+[package]
+name = "aoc_for_rustaceans"
+version = "0.1.0"
+authors = ["lpnh <paniguel.lpnh@gmail.com>"]
+edition = "2021"
+license = "Unlicense"
+publish = false
+
+[features]
+part_1 = []
+part_2 = []
+
+[dependencies]
+anyhow = "1"
