@@ -2,15 +2,10 @@ use anyhow::{Error, Result};
 use regex::Regex;
 
 const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_03.txt");
-
-#[cfg(feature = "part_1")]
+//#[cfg(feature = "part_1")]
 fn solve_part_1(input: &str) -> Result<String, Error> {
-    // Convert to array of arrays of integers
-    // create a regex that only matches the following pattern
-    // mul(x,y) where x and y are 3 digit numbers
     let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap();
-    //from puzzle input extract all the mul(x,y) instructions and store only the x and y values as
-    //tuples in an array of tuples
+
     let instructions: Vec<(i32, i32)> = re
         .captures_iter(input)
         .map(|cap| {
@@ -21,20 +16,38 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
         })
         .collect();
 
-    let mut solution = 0;
-
-    for (x, y) in instructions {
-        solution += x * y;
-    }
+    let solution = instructions.iter().fold(0, |acc, (a, b)| acc + a * b);
 
     Ok(solution.to_string())
 }
 
 #[cfg(feature = "part_2")]
 fn solve_part_2(input: &str) -> Result<String, Error> {
-    let solution = input.lines().next().unwrap().replace("input", "answer");
+    let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don't\(\)").unwrap();
+    //Only the most recent do() or don't() instruction applies
+    let mut enabled = true;
+    let instructions: Vec<(i32, i32)> = re
+        .captures_iter(input)
+        .filter(|cap| {
+            if cap.get(0).unwrap().as_str() == "do()" {
+                enabled = true;
+                return false;
+            } else if cap.get(0).unwrap().as_str() == "don't()" {
+                enabled = false;
+            }
+            enabled
+        })
+        .map(|cap| {
+            (
+                cap[1].parse::<i32>().unwrap(),
+                cap[2].parse::<i32>().unwrap(),
+            )
+        })
+        .collect();
 
-    Ok(solution)
+    let solution = instructions.iter().fold(0, |acc, (a, b)| acc + a * b);
+
+    Ok(solution.to_string())
 }
 
 fn main() -> Result<(), Error> {
@@ -60,15 +73,24 @@ fn main() -> Result<(), Error> {
 #[cfg(test)]
 #[test]
 fn sample_part_1() {
-    let sample_input = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))";
-    // Convert to array of arrays of integers
-    // create a regex that only matches the following pattern
-    // mul(x,y) where x and y are 3 digit numbers
-    let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap();
-    //from puzzle input extract all the mul(x,y) instructions and store only the x and y values as
-    //tuples in an array of tuples
+    let sample_input = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
+    let sample_input2 =
+        "don'txmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
+
+    let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don't\(\)").unwrap();
+    //Only the most recent do() or don't() instruction applies
+    let mut enabled = true;
     let instructions: Vec<(i32, i32)> = re
         .captures_iter(sample_input)
+        .filter(|cap| {
+            if cap.get(0).unwrap().as_str() == "do()" {
+                enabled = true;
+                return false;
+            } else if cap.get(0).unwrap().as_str() == "don't()" {
+                enabled = false;
+            }
+            enabled
+        })
         .map(|cap| {
             (
                 cap[1].parse::<i32>().unwrap(),
@@ -77,13 +99,31 @@ fn sample_part_1() {
         })
         .collect();
 
-    let mut solution = 0;
+    let mut enabled1 = false;
+    let instructions2: Vec<(i32, i32)> = re
+        .captures_iter(sample_input2)
+        .filter(|cap| {
+            if cap.get(0).unwrap().as_str() == "do()" {
+                enabled1 = true;
+                return false;
+            } else if cap.get(0).unwrap().as_str() == "don't()" {
+                enabled1 = false;
+            }
+            enabled1
+        })
+        .map(|cap| {
+            (
+                cap[1].parse::<i32>().unwrap(),
+                cap[2].parse::<i32>().unwrap(),
+            )
+        })
+        .collect();
 
-    for (x, y) in instructions {
-        solution += x * y;
-    }
+    let expected_input1 = vec![(2, 4), (8, 5)];
+    let expected_input2 = vec![(8, 5)];
 
-    assert_eq!(solution, 161);
+    assert_eq!(instructions, expected_input1);
+    assert_eq!(instructions2, expected_input2);
 }
 
 #[cfg(feature = "part_2")]

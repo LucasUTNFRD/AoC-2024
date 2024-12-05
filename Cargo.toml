@@ -12,3 +12,4 @@ part_2 = []
 
 [dependencies]
 anyhow = "1"
+regex = "1.11.1"
