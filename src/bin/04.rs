@@ -70,11 +70,74 @@ fn is_valid_direction(
     true
 }
 
+// DIAGONAL DIRECTIONS IN CLOCKWISE ORDER
+const DIAGONAL_DIRECTIONS: [(i32, i32); 4] = [(-1, -1), (1, -1), (1, 1), (-1, 1)];
+//
+// 0 1 2 3
+// 1 M A S
+// 2 S A M
+// 3 M S S
+
 #[cfg(feature = "part_2")]
 fn solve_part_2(input: &str) -> Result<String, Error> {
-    let solution = input.lines().next().unwrap().replace("input", "answer");
+    let grid: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
 
-    Ok(solution)
+    let rows = grid.len();
+    let cols = grid[0].len();
+
+    let mut count = 0;
+    // start from one beacuse we are looking for the cross
+    for row in 1..rows - 1 {
+        for col in 1..cols - 1 {
+            if grid[row][col] == 'A' {
+                if find_xmas_pattern(&grid, row, col) {
+                    count += 1;
+                }
+            }
+        }
+    }
+
+    Ok(count.to_string())
+}
+
+// when we are in the center of the cross that is an 'A' we need to check the other 4 DIRECTIONS
+// to see if we make a cross with the key MAS. So we have fours posible combinations in the
+// diagonal directions
+// MS and MS, SM and SM, MM and SM, SM and MM
+fn find_xmas_pattern(grid: &[Vec<char>], start_row: usize, start_col: usize) -> bool {
+    // Corner patterns in clockwise order
+    let corner_patterns = [
+        ['M', 'S', 'S', 'M'],
+        ['S', 'M', 'M', 'S'],
+        ['M', 'M', 'S', 'S'],
+        ['S', 'S', 'M', 'M'],
+    ];
+
+    // loop clowise over the corner patters if one is matched return true
+    for pattern in corner_patterns.iter() {
+        if is_valid_corner_pattern(grid, start_row, start_col, pattern) {
+            return true;
+        }
+    }
+    false
+}
+
+fn is_valid_corner_pattern(
+    grid: &[Vec<char>],
+    start_row: usize,
+    start_col: usize,
+    pattern: &[char; 4],
+) -> bool {
+    for (i, &char) in pattern.iter().enumerate() {
+        let r = start_row as i32 + DIAGONAL_DIRECTIONS[i].0;
+        let c = start_col as i32 + DIAGONAL_DIRECTIONS[i].1;
+
+        if grid[r as usize][c as usize] != char {
+            return false;
+        }
+    }
+
+    true
 }
 
 fn main() -> Result<(), Error> {
@@ -121,11 +184,18 @@ MXMXAXMASX
 #[test]
 fn sample_part_2() {
     const SAMPLE_INPUT_2: &str = "\
-sample part 2 input
-goes here
-like this
+MMMSXXMASM
+MSAMXMSMSA
+AMXSXMAAMM
+MSAMASMSMX
+XMASAMXAMM
+XXAMMXXAMA
+SMSMSASXSS
+SAXAMASAAA
+MAMMMXMMMM
+MXMXAXMASX
 ";
-    const SAMPLE_ANSWER_2: &str = "sample part 2 answer";
+    const SAMPLE_ANSWER_2: &str = "9";
 
     assert_eq!(solve_part_2(SAMPLE_INPUT_2).unwrap(), SAMPLE_ANSWER_2);
 }
