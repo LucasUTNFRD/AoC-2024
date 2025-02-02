@@ -9,12 +9,12 @@ fn is_safe_report(levels: &[i32]) -> bool {
     for i in 1..levels.len() {
         let diff = levels[i] - levels[i - 1];
 
-        if diff < 1 || diff > 3 {
+        if !(1..=3).contains(&diff) {
             is_increasing = false;
         }
 
         let rev_diff = levels[i - 1] - levels[i];
-        if rev_diff < 1 || rev_diff > 3 {
+        if !(1..=3).contains(&rev_diff) {
             is_decreasing = false;
         }
 
