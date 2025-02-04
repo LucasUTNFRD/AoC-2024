@@ -25,20 +25,28 @@ impl PointOps for Point {
         (self.0 * scalar, self.1 * scalar)
     }
 }
-
-// #[cfg(feature = "part_1")]
-fn solve_part_1(input: &str) -> Result<String, Error> {
-    let mut anthenas: HashMap<char, Vec<Point>> = HashMap::new();
+fn parse_input(input: &str) -> HashMap<char, Vec<Point>> {
+    let mut antennas: HashMap<char, Vec<Point>> = HashMap::new();
     for (y, row) in input.lines().enumerate() {
         for (x, c) in row.chars().enumerate() {
             if c != '.' {
-                anthenas
+                antennas
                     .entry(c)
                     .or_insert(Vec::new())
                     .push((x as i32, y as i32));
             }
         }
     }
+    antennas
+}
+
+fn is_in_bounds(point: Point, width: i32, height: i32) -> bool {
+    point.0 >= 0 && point.0 < width && point.1 >= 0 && point.1 < height
+}
+
+#[cfg(feature = "part_1")]
+fn solve_part_1(input: &str) -> Result<String, Error> {
+    let antennas = parse_input(input);
 
     let height = input.lines().count() as i32;
     let width = input.lines().next().unwrap().chars().count() as i32;
@@ -47,7 +55,7 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
     let mut antinodes: HashSet<Point> = HashSet::new();
 
     // Process each frequency (character) separately
-    for (_, antenna_positions) in anthenas.iter() {
+    for (_, antenna_positions) in antennas.iter() {
         // For each pair of antennas of the same frequency
         for (i, &p) in antenna_positions.iter().enumerate() {
             for (j, &q) in antenna_positions.iter().enumerate() {
@@ -70,15 +78,39 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
     Ok(antinodes.len().to_string())
 }
 
-fn is_in_bounds(point: Point, width: i32, height: i32) -> bool {
-    point.0 >= 0 && point.0 < width && point.1 >= 0 && point.1 < height
-}
-
 #[cfg(feature = "part_2")]
 fn solve_part_2(input: &str) -> Result<String, Error> {
-    let solution = input.lines().next().unwrap().replace("input", "answer");
+    let antennas = parse_input(input);
 
-    Ok(solution)
+    let height = input.lines().count() as i32;
+    let width = input.lines().next().unwrap().chars().count() as i32;
+
+    // Use HashSet to store unique antinode locations
+    let mut antinodes: HashSet<Point> = HashSet::new();
+
+    for (_, antenna_positions) in antennas.iter() {
+        for (i, &p) in antenna_positions.iter().enumerate() {
+            for (j, &q) in antenna_positions.iter().enumerate() {
+                if i != j {
+                    let diff = q.sub(p);
+
+                    let mut antinode = q;
+                    while is_in_bounds(antinode, width, height) {
+                        antinodes.insert(antinode);
+                        antinode = antinode.add(diff);
+                    }
+
+                    let mut antinode = p;
+                    while is_in_bounds(antinode, width, height) {
+                        antinodes.insert(antinode);
+                        antinode = antinode.sub(diff);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(antinodes.len().to_string())
 }
 
 fn main() -> Result<(), Error> {
@@ -127,8 +159,20 @@ fn sample_part_1() {
 #[test]
 fn sample_part_2() {
     const SAMPLE_INPUT_2: &str = "\
+............
+........0...
+.....0......
+.......0....
+....0.......
+......A.....
+............
+............
+........A...
+.........A..
+............
+............
 ";
-    const SAMPLE_ANSWER_2: &str = "sample part 2 answer";
+    const SAMPLE_ANSWER_2: &str = "34";
 
     assert_eq!(solve_part_2(SAMPLE_INPUT_2).unwrap(), SAMPLE_ANSWER_2);
 }
