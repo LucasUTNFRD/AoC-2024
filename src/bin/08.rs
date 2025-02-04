@@ -1,12 +1,77 @@
 use anyhow::{Error, Result};
+use std::collections::{HashMap, HashSet};
+use std::ops::{Add, Mul, Sub};
 
 const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_08.txt");
 
-#[cfg(feature = "part_1")]
-fn solve_part_1(input: &str) -> Result<String, Error> {
-    let solution = input.lines().next().unwrap().replace("input", "answer");
+type Point = (i32, i32);
 
-    Ok(solution)
+trait PointOps {
+    fn add(&self, other: Point) -> Point;
+    fn sub(&self, other: Point) -> Point;
+    fn mul(&self, scalar: i32) -> Point;
+}
+
+impl PointOps for Point {
+    fn add(&self, other: Point) -> Point {
+        (self.0 + other.0, self.1 + other.1)
+    }
+
+    fn sub(&self, other: Point) -> Point {
+        (self.0 - other.0, self.1 - other.1)
+    }
+
+    fn mul(&self, scalar: i32) -> Point {
+        (self.0 * scalar, self.1 * scalar)
+    }
+}
+
+// #[cfg(feature = "part_1")]
+fn solve_part_1(input: &str) -> Result<String, Error> {
+    let mut anthenas: HashMap<char, Vec<Point>> = HashMap::new();
+    for (y, row) in input.lines().enumerate() {
+        for (x, c) in row.chars().enumerate() {
+            if c != '.' {
+                anthenas
+                    .entry(c)
+                    .or_insert(Vec::new())
+                    .push((x as i32, y as i32));
+            }
+        }
+    }
+
+    let height = input.lines().count() as i32;
+    let width = input.lines().next().unwrap().chars().count() as i32;
+
+    // Use HashSet to store unique antinode locations
+    let mut antinodes: HashSet<Point> = HashSet::new();
+
+    // Process each frequency (character) separately
+    for (_, antenna_positions) in anthenas.iter() {
+        // For each pair of antennas of the same frequency
+        for (i, &p) in antenna_positions.iter().enumerate() {
+            for (j, &q) in antenna_positions.iter().enumerate() {
+                if i != j {
+                    let diff = q.sub(p);
+                    let antinode_1 = q.add(diff);
+                    let antinode_2 = p.sub(diff);
+                    if is_in_bounds(antinode_1, width, height) {
+                        antinodes.insert(antinode_1);
+                    }
+
+                    if is_in_bounds(antinode_2, width, height) {
+                        antinodes.insert(antinode_2);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(antinodes.len().to_string())
+}
+
+fn is_in_bounds(point: Point, width: i32, height: i32) -> bool {
+    point.0 >= 0 && point.0 < width && point.1 >= 0 && point.1 < height
 }
 
 #[cfg(feature = "part_2")]
@@ -40,11 +105,20 @@ fn main() -> Result<(), Error> {
 #[test]
 fn sample_part_1() {
     const SAMPLE_INPUT_1: &str = "\
-sample part 1 input
-goes here
-like this
+............
+........0...
+.....0......
+.......0....
+....0.......
+......A.....
+............
+............
+........A...
+.........A..
+............
+............
 ";
-    const SAMPLE_ANSWER_1: &str = "sample part 1 answer";
+    const SAMPLE_ANSWER_1: &str = "14";
 
     assert_eq!(solve_part_1(SAMPLE_INPUT_1).unwrap(), SAMPLE_ANSWER_1);
 }
@@ -53,9 +127,6 @@ like this
 #[test]
 fn sample_part_2() {
     const SAMPLE_INPUT_2: &str = "\
-sample part 2 input
-goes here
-like this
 ";
     const SAMPLE_ANSWER_2: &str = "sample part 2 answer";
 
