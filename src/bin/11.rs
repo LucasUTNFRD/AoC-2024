@@ -1,66 +1,66 @@
-use std::collections::VecDeque;
+use rustc_hash::FxHashMap;
 
 use anyhow::{Error, Result};
 
 const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_11.txt");
 
-fn apply_rules(stone: &u64) -> (u64, Option<u64>) {
-    let stone_str = stone.to_string();
-    let digit_count = stone_str.len();
+fn count(stone: &u64, blinks: usize, cache: &mut FxHashMap<(u64, usize), u64>) -> u64 {
+    if let Some(&count) = cache.get(&(*stone, blinks)) {
+        return count;
+    }
+    if blinks == 0 {
+        return 1;
+    }
+    let result = match stone {
+        0 => count(&1, blinks - 1, cache),
+        _ if stone.to_string().len() % 2 == 0 => {
+            let stone_str = stone.to_string();
+            let digit_count = stone_str.len();
 
-    match stone {
-        // Rule 1: If the stone is 0, replace with 1
-        0 => (1, None),
-
-        // Rule 2: If number has even digits, split into two stones
-        _ if digit_count % 2 == 0 => {
             let mid = digit_count / 2;
             let left = stone_str[..mid].parse::<u64>().unwrap_or(0);
             let right = stone_str[mid..].parse::<u64>().unwrap_or(0);
-            (left, Some(right))
+            count(&left, blinks - 1, cache) + count(&right, blinks - 1, cache)
         }
+        _ => count(&(stone * 2024), blinks - 1, cache),
+    };
 
-        // Rule 3: Otherwise multiply by 2024
-        _ => (*stone * 2024, None),
-    }
+    cache.insert((*stone, blinks), result);
+
+    result
 }
 
-fn blink(stones: &VecDeque<u64>, time: usize) -> usize {
-    let mut current_stones = stones.clone();
+const TIMES_PART_ONE: usize = 25;
+const TIMES_PART_TWO: usize = 75;
 
-    for _ in 0..time {
-        // let mut new_stones = VecDeque::new();
-        while let Some(stone) = current_stones.pop_front() {
-            let stone_with_rules = apply_rules(&stone);
-            new_stones.push_back(stone_with_rules.0);
-            if let Some(right) = stone_with_rules.1 {
-                new_stones.push_back(right);
-            }
-        }
-        current_stones = new_stones;
-    }
-    current_stones.len()
-}
-
-const TIMES: usize = 75;
-
-// #[cfg(feature = "part_1")]
+#[cfg(feature = "part_1")]
 fn solve_part_1(input: &str) -> Result<String, Error> {
-    let stones: VecDeque<u64> = input
+    let stones: Vec<u64> = input
         .split_whitespace()
         .map(|s| s.parse().unwrap())
         .collect();
-
-    let count_blinks = blink(&stones, TIMES);
+    let mut cache: FxHashMap<(u64, usize), u64> = FxHashMap::default();
+    let count_blinks: u64 = stones
+        .iter()
+        .map(|stone| count(stone, TIMES_PART_ONE, &mut cache))
+        .sum();
 
     Ok(count_blinks.to_string())
 }
 
 #[cfg(feature = "part_2")]
 fn solve_part_2(input: &str) -> Result<String, Error> {
-    let solution = input.lines().next().unwrap().replace("input", "answer");
+    let stones: Vec<u64> = input
+        .split_whitespace()
+        .map(|s| s.parse().unwrap())
+        .collect();
+    let mut cache: FxHashMap<(u64, usize), u64> = FxHashMap::default();
+    let count_blinks: u64 = stones
+        .iter()
+        .map(|stone| count(stone, TIMES_PART_TWO, &mut cache))
+        .sum();
 
-    Ok(solution)
+    Ok(count_blinks.to_string())
 }
 
 fn main() -> Result<(), Error> {
