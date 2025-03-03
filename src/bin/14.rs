@@ -63,11 +63,58 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
     Ok(solution.to_string())
 }
 
-#[cfg(feature = "part_2")]
+// #[cfg(feature = "part_2")]
 fn solve_part_2(input: &str) -> Result<String, Error> {
-    let solution = input.lines().next().unwrap().replace("input", "answer");
+    let mut bots = parse(input);
+    let mut seconds = 0;
 
-    Ok(solution)
+    // create a vector that works as map of the grid storing the amount of bot in each position throug the wide .
+    // use a loop that breaks when found a line of more than 10 lined robots
+    loop {
+        // Update positions of all robots
+        let mut grid = vec![vec![0; WIDE as usize]; HEIGHT as usize];
+
+        bots.iter_mut().for_each(|bot| {
+            bot.px = (bot.px + bot.vx) % WIDE;
+            bot.py = (bot.py + bot.vy) % HEIGHT;
+            // Ensure positions are positive
+            bot.px = (bot.px + WIDE) % WIDE;
+            bot.py = (bot.py + HEIGHT) % HEIGHT;
+
+            grid[bot.py as usize][bot.px as usize] += 1;
+        });
+
+        seconds += 1;
+
+        for y in 0..HEIGHT as usize {
+            let mut current_length = 0;
+            let mut max_length = 0;
+
+            for x in 0..WIDE as usize {
+                if grid[y][x] > 0 {
+                    current_length += 1;
+                } else {
+                    max_length = max_length.max(current_length);
+                    current_length = 0;
+                }
+            }
+
+            // Check the final length (in case the line ends at the edge)
+            max_length = max_length.max(current_length);
+
+            // If we found a line long enough, return the result
+            if max_length >= 30 {
+                //before returnign print the grid
+                for y in 0..HEIGHT as usize {
+                    for x in 0..WIDE as usize {
+                        print!("{}", if grid[y][x] > 0 { '#' } else { '.' });
+                    }
+                    println!();
+                }
+                return Ok(seconds.to_string());
+            }
+        }
+    }
 }
 
 fn main() -> Result<(), Error> {
