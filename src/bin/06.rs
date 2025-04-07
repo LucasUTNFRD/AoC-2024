@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
-
+// use std::collections::{HashMap, HashSet};
 use anyhow::{Error, Result};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 
 const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_06.txt");
 
@@ -64,7 +64,7 @@ impl Guard {
     }
 
     pub fn walk(&mut self) -> usize {
-        let mut visited = HashSet::new();
+        let mut visited = HashSet::default();
         visited.insert((self.position.x, self.position.y));
 
         loop {
@@ -123,7 +123,7 @@ impl Guard {
     /// 3. A true loop is detected when we revisit a position with the same direction we had before
     /// 4. We maintain the guard's original state by resetting after each test
     pub fn walk_in_loop(&mut self) -> usize {
-        let mut obstacles = HashSet::new();
+        let mut obstacles = HashSet::default();
 
         loop {
             if let None = self.next_step() {
@@ -153,7 +153,7 @@ impl Guard {
     }
 
     fn detect_loop(&mut self) -> bool {
-        let mut visited = HashSet::new();
+        let mut visited = HashSet::default();
         let mut state = (self.position, self.direction);
 
         loop {

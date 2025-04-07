@@ -1,5 +1,5 @@
 use anyhow::{Error, Result};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap as HashMap;
 
 const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_01.txt");
 
@@ -18,7 +18,7 @@ fn parse_input(input: &str) -> (Vec<i32>, Vec<i32>) {
     (left, right)
 }
 
-#[cfg(feature = "part_1")]
+// #[cfg(feature = "part_1")]
 fn solve_part_1(input: &str) -> Result<String, Error> {
     let (mut left, mut right) = parse_input(input);
 
@@ -34,11 +34,11 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
     Ok(solution.to_string())
 }
 
-#[cfg(feature = "part_2")]
+// #[cfg(feature = "part_2")]
 fn solve_part_2(input: &str) -> Result<String, Error> {
     let (left, right) = parse_input(input);
 
-    let mut right_list_frequency = HashMap::new();
+    let mut right_list_frequency = HashMap::default();
 
     right
         .iter()
